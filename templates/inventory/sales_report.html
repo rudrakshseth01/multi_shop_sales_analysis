@@ -1,0 +1,37 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<h2>Sales Report</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Total Sales by Shop</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Shop</th>
+                    <th>Total Sales</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in shop_sales %}
+                <tr>
+                    <td>{{ sale.shop__name }}</td>
+                    <td>${{ sale.total_sales }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="col-md-12 mt-4">
+        <h3>Sales Trend</h3>
+        <div id="sales-chart"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    const chartData = JSON.parse('{{ chart|escapejs }}');
+    Plotly.newPlot('sales-chart', chartData.data, chartData.layout);
+</script>
+{% endblock %} 

@@ -1,0 +1,103 @@
+{% extends 'inventory/base.html' %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Sales</h5>
+                    <p class="card-text display-4">₹{{ total_sales|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card success">
+                <div class="card-body">
+                    <h5 class="card-title">Stock Value</h5>
+                    <p class="card-text display-4">₹{{ total_stock_value|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card warning">
+                <div class="card-body">
+                    <h5 class="card-title">Low Stock Items</h5>
+                    <p class="card-text display-4">{{ low_stock_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card danger">
+                <div class="card-body">
+                    <h5 class="card-title">Expiring Soon</h5>
+                    <p class="card-text display-4">{{ expiring_soon }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Top Selling Medicines</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Medicine</th>
+                                    <th>Total Quantity</th>
+                                    <th>Total Sales</th>
+                                    <th>Available At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for medicine in top_medicines %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'medicine_detail' medicine.primary_id %}">
+                                            {{ medicine.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ medicine.total_quantity }}</td>
+                                    <td>₹{{ medicine.total_sales|floatformat:2 }}</td>
+                                    <td>
+                                        {% for shop in medicine.shops %}
+                                            <span class="badge bg-info me-1">{{ shop }}</span>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Actions</h5>
+                    <div class="list-group">
+                        <a href="{% url 'medicine_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-pills me-2"></i> View All Medicines
+                        </a>
+                        <a href="{% url 'shop_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-store me-2"></i> View All Shops
+                        </a>
+                        <a href="{% url 'stock_alerts' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-exclamation-triangle me-2"></i> View Alerts
+                        </a>
+                        <a href="{% url 'sales_analysis' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-chart-line me-2"></i> Sales Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

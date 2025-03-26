@@ -1,0 +1,215 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}{{ medicine.name }} - Medical Inventory{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <!-- Medicine Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>{{ medicine.name }}</h2>
+            <p class="text-muted">ID: {{ medicine.primary_id }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editMedicineModal">
+                <i class="fas fa-edit me-2"></i> Edit
+            </button>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteMedicineModal">
+                <i class="fas fa-trash me-2"></i> Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- Medicine Details -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Details</h5>
+                    <table class="table">
+                        <tr>
+                            <th>Generic Name:</th>
+                            <td>{{ medicine.generic_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Category:</th>
+                            <td>{{ medicine.category|title }}</td>
+                        </tr>
+                        <tr>
+                            <th>Manufacturer:</th>
+                            <td>{{ medicine.manufacturer }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description:</th>
+                            <td>{{ medicine.description }}</td>
+                        </tr>
+                        <tr>
+                            <th>Side Effects:</th>
+                            <td>{{ medicine.side_effects }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Stock Overview</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Shop</th>
+                                    <th>Current Stock</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stock in stocks %}
+                                <tr>
+                                    <td>{{ stock.shop.name }}</td>
+                                    <td>{{ stock.quantity }}</td>
+                                    <td>₹{{ stock.price }}</td>
+                                    <td>
+                                        {% if stock.quantity <= stock.reorder_level %}
+                                            <span class="badge bg-danger">Low Stock</span>
+                                        {% else %}
+                                            <span class="badge bg-success">In Stock</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop-wise Sales Analysis -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Shop-wise Sales Analysis</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Shop</th>
+                                    <th>Total Units Sold</th>
+                                    <th>Total Revenue</th>
+                                    <th>Current Stock</th>
+                                    <th>Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in shop_stats %}
+                                <tr>
+                                    <td>{{ stat.shop_name }}</td>
+                                    <td>{{ stat.total_sales }}</td>
+                                    <td>₹{{ stat.revenue|floatformat:2 }}</td>
+                                    <td>{{ stat.current_stock }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {% widthratio stat.total_sales total_sales.total_quantity 100 %}%">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Chart -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Monthly Sales Trend</h5>
+            <div id="sales-chart"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Medicine Modal -->
+<div class="modal fade" id="editMedicineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Medicine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'medicine_edit' medicine.primary_id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Add form fields here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Medicine Modal -->
+<div class="modal fade" id="deleteMedicineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Medicine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete {{ medicine.name }}?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'medicine_delete' medicine.primary_id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fetch and render sales chart
+    fetch('{% url "medicine_sales_chart" medicine.primary_id %}')
+        .then(response => response.json())
+        .then(data => {
+            Plotly.newPlot('sales-chart', [{
+                x: data.labels,
+                y: data.amounts,
+                type: 'line',
+                name: 'Sales Amount'
+            }, {
+                x: data.labels,
+                y: data.quantities,
+                type: 'bar',
+                name: 'Quantity Sold',
+                yaxis: 'y2'
+            }], {
+                title: 'Monthly Sales Trend',
+                yaxis: { title: 'Sales (₹)' },
+                yaxis2: {
+                    title: 'Quantity',
+                    overlaying: 'y',
+                    side: 'right'
+                }
+            });
+        });
+</script>
+{% endblock %} 

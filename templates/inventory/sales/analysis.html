@@ -1,0 +1,121 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}Sales Analysis - Medical Inventory{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stats-card primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Revenue</h5>
+                    <p class="card-text display-4">₹{{ total_sales.total_amount|floatformat:2 }}</p>
+                    <small class="text-muted">Total Units Sold: {{ total_sales.total_quantity }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card success">
+                <div class="card-body">
+                    <h5 class="card-title">Average Transaction</h5>
+                    <p class="card-text display-4">₹{{ total_sales.avg_transaction|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card warning">
+                <div class="card-body">
+                    <h5 class="card-title">Payment Methods</h5>
+                    <div id="payment-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop Analysis -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Shop Performance</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Shop</th>
+                                    <th>Total Sales</th>
+                                    <th>Units Sold</th>
+                                    <th>Unique Medicines</th>
+                                    <th>Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for shop in shop_analysis %}
+                                <tr>
+                                    <td>{{ shop.name }}</td>
+                                    <td>₹{{ shop.total_sales|default:0|floatformat:2 }}</td>
+                                    <td>{{ shop.total_quantity|default:0 }}</td>
+                                    <td>{{ shop.unique_medicines }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {% widthratio shop.total_sales|default:0 total_sales.total_amount 100 %}%">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medicine Performance by Shop -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Medicine Performance by Shop</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Shop</th>
+                            <th>Units Sold</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in medicine_by_shop %}
+                        <tr>
+                            <td>{{ item.medicine__name }}</td>
+                            <td>{{ item.shop__name }}</td>
+                            <td>{{ item.total_quantity }}</td>
+                            <td>₹{{ item.total_amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Payment methods pie chart
+    const paymentData = {
+        values: [{% for stat in payment_stats %}{{ stat.total }},{% endfor %}],
+        labels: [{% for stat in payment_stats %}'{{ stat.payment_method|upper }}',{% endfor %}],
+        type: 'pie'
+    };
+    Plotly.newPlot('payment-chart', [paymentData], {
+        height: 200,
+        margin: { t: 0, b: 0, l: 0, r: 0 }
+    });
+</script>
+{% endblock %}

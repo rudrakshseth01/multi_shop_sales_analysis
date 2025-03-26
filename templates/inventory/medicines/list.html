@@ -1,0 +1,241 @@
+{% extends 'inventory/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+
+{% block title %}Medicines - Medical Inventory{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Medicines</h2>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMedicineModal">
+                <i class="fas fa-plus"></i> Add Medicine
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <!-- Search Bar -->
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Search medicines..." value="{{ request.GET.search }}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="col-md-2">
+                    <label class="form-label">Category</label>
+                    {% render_field filter.form.category class="form-select" %}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Manufacturer</label>
+                    {% render_field filter.form.manufacturer class="form-control" %}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Generic Name</label>
+                    {% render_field filter.form.generic_name class="form-control" %}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                        <a href="{% url 'medicine_list' %}" class="btn btn-secondary">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Medicines Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Generic Name</th>
+                            <th>Category</th>
+                            <th>Manufacturer</th>
+                            <th>Total Stock</th>
+                            <th>Total Sales</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for medicine in medicines %}
+                        <tr>
+                            <td>{{ medicine.primary_id }}</td>
+                            <td>
+                                <a href="{% url 'medicine_detail' medicine.primary_id %}">
+                                    {{ medicine.name }}
+                                </a>
+                            </td>
+                            <td>{{ medicine.generic_name }}</td>
+                            <td>{{ medicine.category|title }}</td>
+                            <td>{{ medicine.manufacturer }}</td>
+                            <td>{{ medicine.total_stock }}</td>
+                            <td>{{ medicine.total_sales }}</td>
+                            <td>
+                                <a href="{% url 'medicine_detail' medicine.primary_id %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-warning" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editMedicineModal{{ medicine.primary_id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteMedicineModal{{ medicine.primary_id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Medicine Modal -->
+<div class="modal fade" id="addMedicineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Medicine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'medicine_add' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Medicine ID</label>
+                        <input type="text" class="form-control" name="primary_id" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Generic Name</label>
+                        <input type="text" class="form-control" name="generic_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category" required>
+                            <option value="tablet">Tablet</option>
+                            <option value="syrup">Syrup</option>
+                            <option value="injection">Injection</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Manufacturer</label>
+                        <input type="text" class="form-control" name="manufacturer" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Side Effects</label>
+                        <textarea class="form-control" name="side_effects" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Medicine</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for medicine in medicines %}
+<!-- Edit Medicine Modal -->
+<div class="modal fade" id="editMedicineModal{{ medicine.primary_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Medicine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'medicine_edit' medicine.primary_id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ medicine.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Generic Name</label>
+                        <input type="text" class="form-control" name="generic_name" value="{{ medicine.generic_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category" required>
+                            <option value="tablet" {% if medicine.category == 'tablet' %}selected{% endif %}>Tablet</option>
+                            <option value="syrup" {% if medicine.category == 'syrup' %}selected{% endif %}>Syrup</option>
+                            <option value="injection" {% if medicine.category == 'injection' %}selected{% endif %}>Injection</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Manufacturer</label>
+                        <input type="text" class="form-control" name="manufacturer" value="{{ medicine.manufacturer }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3">{{ medicine.description }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Side Effects</label>
+                        <textarea class="form-control" name="side_effects" rows="3">{{ medicine.side_effects }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Medicine Modal -->
+<div class="modal fade" id="deleteMedicineModal{{ medicine.primary_id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Medicine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete {{ medicine.name }}?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'medicine_delete' medicine.primary_id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %} 

@@ -1,0 +1,50 @@
+<!-- {% comment %} {% extends 'inventory/base.html' %} {% endcomment %}
+{% comment %} {% extends 'base.html' %} {% endcomment %}
+
+{% block content %}
+<h2>Add Sale</h2>
+<form method="post">
+    {% csrf_token %}
+    <div>
+        <label for="medicine_id">Medicine:</label>
+        <select name="medicine_id" id="medicine_id" required>
+            <option value="">Select Medicine</option>
+            {% for medicine in medicines %}
+            <option value="{{ medicine.primary_id }}">{{ medicine.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="shop_id">Shop:</label>
+        <select name="shop_id" id="shop_id" required>
+            <option value="">Select Shop</option>
+            {% for shop in shops %}
+            <option value="{{ shop.id }}">{{ shop.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="quantity">Quantity:</label>
+        <input type="number" name="quantity" id="quantity" min="1" required>
+    </div>
+    <div>
+        <label for="payment_method">Payment Method:</label>
+        <select name="payment_method" id="payment_method" required>
+            <option value="">Select Payment Method</option>
+            <option value="cash">Cash</option>
+            <option value="upi">UPI</option>
+            <option value="card">Card</option>
+            <option value="insurance">Insurance</option>
+        </select>
+    </div>
+    <div>
+        <label for="customer_name">Customer Name:</label>
+        <input type="text" name="customer_name" id="customer_name">
+    </div>
+    <div>
+        <label for="customer_phone">Customer Phone:</label>
+        <input type="text" name="customer_phone" id="customer_phone">
+    </div>
+    <button type="submit">Add Sale</button>
+</form>
+{% endblock %} -->

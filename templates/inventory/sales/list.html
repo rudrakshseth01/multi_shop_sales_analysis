@@ -1,0 +1,30 @@
+<form method="get">
+          {{ filter.form.as_p }}
+          <button type="submit">Filter</button>
+      </form>
+      
+      <table>
+          <thead>
+              <tr>
+                  <th>Shop</th>
+                  <th>Medicine</th>
+                  <th>Quantity</th>
+                  <th>Total Amount</th>
+                  <th>Date</th>
+                  <th>Payment Method</th>
+              </tr>
+          </thead>
+          <tbody>
+              {% for sale in sales %}
+              <tr>
+                  <td>{{ sale.shop.name }}</td>
+                  <td>{{ sale.medicine.name }}</td>
+                  <td>{{ sale.quantity }}</td>
+                  <td>{{ sale.total_amount }}</td>
+                  <td>{{ sale.date }}</td>
+                  <td>{{ sale.payment_method }}</td>
+              </tr>
+              {% endfor %}
+          </tbody>
+      </table>
+      

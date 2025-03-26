@@ -1,0 +1,34 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<h2>Add New Item</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" name="name" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" required></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Price</label>
+        <input type="number" name="price" step="0.01" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Quantity</label>
+        <input type="number" name="quantity" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Shop</label>
+        <select name="shop" class="form-control" required>
+            {% for shop in shops %}
+            <option value="{{ shop.id }}">{{ shop.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Add Item</button>
+</form>
+{% endblock %} 
