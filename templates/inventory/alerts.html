@@ -1,186 +1,234 @@
-{% extends 'inventory/base.html' %}
-
-{% block title %}Stock Alerts - Medical Inventory{% endblock %}
-
-{% block main_content %}
+{% extends 'inventory/base.html' %} {% block title %}Stock Alerts - Medical
+Inventory{% endblock %} {% block main_content %}
 <div class="container-fluid">
-    <h2 class="mb-4">Stock Alerts</h2>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Stock Alerts</h2>
+    <a href="{% url 'stock_alerts' %}" class="btn btn-primary">
+      <i class="fas fa-sync-alt me-2"></i> Refresh Alerts
+    </a>
+  </div>
 
-    <!-- Low Stock Alerts -->
-    <div class="card mb-4">
-        <div class="card-header bg-danger text-white">
-            <h5 class="mb-0">Low Stock Alerts ({{ low_stock_alerts.count }})</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Medicine</th>
-                            <th>Shop</th>
-                            <th>Current Stock</th>
-                            <th>Reorder Level</th>
-                            <th>Last Restocked</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for alert in low_stock_alerts %}
-                        <tr>
-                            <td>{{ alert.medicine_stock.medicine.name }}</td>
-                            <td>{{ alert.medicine_stock.shop.name }}</td>
-                            <td>{{ alert.medicine_stock.quantity }}</td>
-                            <td>{{ alert.medicine_stock.reorder_level }}</td>
-                            <td>{{ alert.medicine_stock.last_restocked|date:"d M Y" }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" 
-                                        onclick="addStock('{{ alert.medicine_stock.id }}')">
-                                    <i class="fas fa-plus"></i> Restock
-                                </button>
-                                <form method="post" action="{% url 'resolve_alert' alert.id %}" 
-                                      class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <i class="fas fa-check"></i> Resolve
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <!-- Low Stock Alerts -->
+  <div class="card mb-4">
+    <div class="card-header bg-danger text-white">
+      <h5 class="mb-0">Low Stock Alerts ({{ low_stock_alerts.count }})</h5>
     </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Shop</th>
+              <th>Current Stock</th>
+              <th>Reorder Level</th>
+              <th>Last Restocked</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for alert in low_stock_alerts %}
+            <tr>
+              <td>{{ alert.medicine_stock.medicine.name }}</td>
+              <td>{{ alert.medicine_stock.shop.name }}</td>
+              <td>{{ alert.medicine_stock.quantity }}</td>
+              <td>{{ alert.medicine_stock.reorder_level }}</td>
+              <td>{{ alert.medicine_stock.last_restocked|date:"d M Y" }}</td>
+              <td>
+                <button
+                  class="btn btn-sm btn-primary"
+                  onclick="addStock('{{ alert.medicine_stock.id }}')"
+                >
+                  <i class="fas fa-plus"></i> Restock
+                </button>
+                <form
+                  method="post"
+                  action="{% url 'resolve_alert' alert.id %}"
+                  class="d-inline"
+                >
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-success">
+                    <i class="fas fa-check"></i> Resolve
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    <!-- Expiring Soon Alerts -->
-    <div class="card mb-4">
-        <div class="card-header bg-warning">
-            <h5 class="mb-0">Expiring Soon ({{ expiring_alerts.count }})</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Medicine</th>
-                            <th>Shop</th>
-                            <th>Batch</th>
-                            <th>Expiry Date</th>
-                            <th>Current Stock</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for alert in expiring_alerts %}
-                        <tr>
-                            <td>{{ alert.medicine_stock.medicine.name }}</td>
-                            <td>{{ alert.medicine_stock.shop.name }}</td>
-                            <td>{{ alert.medicine_stock.batch_number }}</td>
-                            <td>{{ alert.medicine_stock.expiry_date|date:"d M Y" }}</td>
-                            <td>{{ alert.medicine_stock.quantity }}</td>
-                            <td>
-                                <form method="post" action="{% url 'resolve_alert' alert.id %}" 
-                                      class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <i class="fas fa-check"></i> Resolve
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <!-- Expiring Soon Alerts -->
+  <div class="card mb-4">
+    <div class="card-header bg-warning">
+      <h5 class="mb-0">Expiring Soon ({{ expiring_alerts.count }})</h5>
     </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Shop</th>
+              <th>Batch</th>
+              <th>Expiry Date</th>
+              <th>Current Stock</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for alert in expiring_alerts %}
+            <tr>
+              <td>{{ alert.medicine_stock.medicine.name }}</td>
+              <td>{{ alert.medicine_stock.shop.name }}</td>
+              <td>{{ alert.medicine_stock.batch_number }}</td>
+              <td>{{ alert.medicine_stock.expiry_date|date:"d M Y" }}</td>
+              <td>{{ alert.medicine_stock.quantity }}</td>
+              <td>
+                <form
+                  method="post"
+                  action="{% url 'resolve_alert' alert.id %}"
+                  class="d-inline"
+                >
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-success">
+                    <i class="fas fa-check"></i> Resolve
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    <!-- Expired Alerts -->
-    <div class="card">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Expired Stock ({{ expired_alerts.count }})</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Medicine</th>
-                            <th>Shop</th>
-                            <th>Batch</th>
-                            <th>Expiry Date</th>
-                            <th>Quantity</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for alert in expired_alerts %}
-                        <tr class="table-danger">
-                            <td>{{ alert.medicine_stock.medicine.name }}</td>
-                            <td>{{ alert.medicine_stock.shop.name }}</td>
-                            <td>{{ alert.medicine_stock.batch_number }}</td>
-                            <td>{{ alert.medicine_stock.expiry_date|date:"d M Y" }}</td>
-                            <td>{{ alert.medicine_stock.quantity }}</td>
-                            <td>
-                                <form method="post" action="{% url 'resolve_alert' alert.id %}" 
-                                      class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i> Remove Stock
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <!-- Expired Alerts -->
+  <div class="card">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0">Expired Stock ({{ expired_alerts.count }})</h5>
     </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Shop</th>
+              <th>Batch</th>
+              <th>Expiry Date</th>
+              <th>Quantity</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for alert in expired_alerts %}
+            <tr class="table-danger">
+              <td>{{ alert.medicine_stock.medicine.name }}</td>
+              <td>{{ alert.medicine_stock.shop.name }}</td>
+              <td>{{ alert.medicine_stock.batch_number }}</td>
+              <td>{{ alert.medicine_stock.expiry_date|date:"d M Y" }}</td>
+              <td>{{ alert.medicine_stock.quantity }}</td>
+              <td>
+                <form
+                  method="post"
+                  action="{% url 'resolve_alert' alert.id %}"
+                  class="d-inline"
+                >
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i> Remove Stock
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Add Stock Modal -->
 <div class="modal fade" id="addStockModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add Stock</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="addStockForm" method="post">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" class="form-control" name="quantity" required min="1">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Batch Number</label>
-                        <input type="text" class="form-control" name="batch_number" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Expiry Date</label>
-                        <input type="date" class="form-control" name="expiry_date" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Stock</button>
-                </div>
-            </form>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Stock</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <form id="addStockForm" method="post">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Quantity</label>
+            <input
+              type="number"
+              class="form-control"
+              name="quantity"
+              required
+              min="1"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Batch Number</label>
+            <input
+              type="text"
+              class="form-control"
+              name="batch_number"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Expiry Date</label>
+            <input
+              type="date"
+              class="form-control"
+              name="expiry_date"
+              required
+            />
+          </div>
         </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">Add Stock</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
+{% endblock %} {% block extra_scripts %}
 <script>
-function addStock(stockId) {
-    const modal = new bootstrap.Modal(document.getElementById('addStockModal'));
-    const form = document.getElementById('addStockForm');
-    form.action = `/shops/${stockId}/add-stock/`;
+  function addStock(stockId) {
+    const modal = new bootstrap.Modal(document.getElementById("addStockModal"));
+    const form = document.getElementById("addStockForm");
+    form.action = `/inventory/shops/${stockId}/add-stock/`;
+
+    // Add a hidden field for alert update
+    if (!document.getElementById("refresh_alerts")) {
+      const hiddenField = document.createElement("input");
+      hiddenField.type = "hidden";
+      hiddenField.name = "refresh_alerts";
+      hiddenField.id = "refresh_alerts";
+      hiddenField.value = "true";
+      form.appendChild(hiddenField);
+    }
+
     modal.show();
-}
+  }
 </script>
-{% endblock %} 
+{% endblock %}

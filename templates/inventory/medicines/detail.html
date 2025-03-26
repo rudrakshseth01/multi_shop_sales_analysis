@@ -11,7 +11,7 @@
             <p class="text-muted">ID: {{ medicine.primary_id }}</p>
         </div>
         <div class="col-md-4 text-end">
-            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editMedicineModal">
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editMedicineModal{{ medicine.primary_id }}">
                 <i class="fas fa-edit me-2"></i> Edit
             </button>
             <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteMedicineModal">
@@ -139,7 +139,7 @@
 </div>
 
 <!-- Edit Medicine Modal -->
-<div class="modal fade" id="editMedicineModal" tabindex="-1">
+<div class="modal fade" id="editMedicineModal{{ medicine.primary_id }}" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -149,7 +149,36 @@
             <form method="post" action="{% url 'medicine_edit' medicine.primary_id %}">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <!-- Add form fields here -->
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ medicine.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Generic Name</label>
+                        <input type="text" class="form-control" name="generic_name" value="{{ medicine.generic_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category" required>
+                            <option value="tablet" {% if medicine.category == 'tablet' %}selected{% endif %}>Tablet</option>
+                            <option value="syrup" {% if medicine.category == 'syrup' %}selected{% endif %}>Syrup</option>
+                            <option value="injection" {% if medicine.category == 'injection' %}selected{% endif %}>Injection</option>
+                            <option value="cream" {% if medicine.category == 'cream' %}selected{% endif %}>Cream</option>
+                            <option value="drops" {% if medicine.category == 'drops' %}selected{% endif %}>Drops</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Manufacturer</label>
+                        <input type="text" class="form-control" name="manufacturer" value="{{ medicine.manufacturer }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3">{{ medicine.description }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Side Effects</label>
+                        <textarea class="form-control" name="side_effects" rows="3">{{ medicine.side_effects }}</textarea>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

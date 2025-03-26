@@ -620,10 +620,18 @@ class MedicineStock(models.Model):
     batch_number = models.CharField(max_length=50)
     expiry_date = models.DateField()
     quantity = models.IntegerField(validators=[MinValueValidator(0)])
+    purchase_price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        default=Decimal('0.00'),
+        help_text="Purchase price per unit"
+    )
     price = models.DecimalField(
         max_digits=10, 
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Selling price per unit"
     )
     reorder_level = models.IntegerField(default=10)
     last_restocked = models.DateTimeField(auto_now=True)
@@ -802,3 +810,42 @@ class StockAlert(models.Model):
         self.resolved = True
         self.resolved_at = timezone.now()
         self.save()
+
+class TransactionLog(models.Model):
+    """
+    Model to track all system activities including sales, purchases, and administrative actions
+    """
+    ACTION_TYPES = [
+        ('sale', 'Sale'),
+        ('purchase', 'Purchase'),
+        ('stock_add', 'Stock Added'),
+        ('stock_update', 'Stock Updated'),
+        ('medicine_add', 'Medicine Added'),
+        ('medicine_edit', 'Medicine Edited'),
+        ('medicine_delete', 'Medicine Deleted'),
+        ('shop_add', 'Shop Added'),
+        ('shop_edit', 'Shop Edited'),
+        ('shop_delete', 'Shop Deleted'),
+        ('alert_resolved', 'Alert Resolved'),
+        ('other', 'Other Action'),
+    ]
+    
+    action_type = models.CharField(max_length=20, choices=ACTION_TYPES)
+    description = models.TextField()
+    medicine = models.ForeignKey(Medicine, on_delete=models.SET_NULL, null=True, blank=True)
+    shop = models.ForeignKey(Shop, on_delete=models.SET_NULL, null=True, blank=True)
+    quantity = models.IntegerField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['action_type']),
+            models.Index(fields=['created_at']),
+        ]
+        verbose_name = "Transaction Log"
+        verbose_name_plural = "Transaction Logs"
+    
+    def __str__(self):
+        return f"{self.get_action_type_display()} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"

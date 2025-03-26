@@ -1,0 +1,347 @@
+{% extends 'inventory/base.html' %} {% load crispy_forms_tags %} 
+{% block title%}Make Purchase - Medical Inventory{% endblock %} 
+{% block extra_css %}
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+/>
+<style>
+  .medicine-row {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+  }
+  .medicine-row:hover {
+    background-color: #e9ecef;
+  }
+  .new-medicine-fields {
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #fff;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+  }
+  .add-row-btn {
+    margin-top: 20px;
+  }
+  .remove-row-btn {
+    cursor: pointer;
+    color: #dc3545;
+  }
+  .form-label {
+    font-weight: 600;
+  }
+</style>
+{% endblock %} {% block main_content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Make Purchase</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post" id="purchaseForm">
+        {% csrf_token %}
+
+        <!-- Shop Selection -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <label for="shop_id" class="form-label">Select Shop</label>
+            <select class="form-select" id="shop_id" name="shop_id" required>
+              <option value="">Select Shop</option>
+              {% for shop in shops %}
+              <option value="{{ shop.id }}">
+                {{ shop.name }} - {{ shop.location }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="purchase_date" class="form-label">Purchase Date</label>
+            <input
+              type="date"
+              class="form-control"
+              id="purchase_date"
+              name="purchase_date"
+              value="{{ today|date:'Y-m-d' }}"
+            />
+          </div>
+        </div>
+
+        <!-- Medicines List -->
+        <div class="row mb-3">
+          <div class="col-12">
+            <h5>Medicine Purchase Details</h5>
+          </div>
+        </div>
+
+        <div id="medicine-list">
+          <!-- Medicine Row Template -->
+          <div class="row medicine-row" id="medicine-row-0">
+            <div class="col-md-3">
+              <label class="form-label">Medicine</label>
+              <select
+                class="form-select medicine-select"
+                name="medicine_id[]"
+                required
+              >
+                <option value="">Select Medicine</option>
+                <option value="new">+ Add New Medicine</option>
+                {% for medicine in medicines %}
+                <option value="{{ medicine.primary_id }}">
+                  {{ medicine.name }} ({{ medicine.generic_name }})
+                </option>
+                {% endfor %}
+              </select>
+
+              <!-- New Medicine Fields (hidden by default) -->
+              <div class="new-medicine-fields" style="display: none">
+                <div class="mb-2">
+                  <label class="form-label">Medicine ID</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="new_med_id_0"
+                    placeholder="MED001"
+                  />
+                </div>
+                <div class="mb-2">
+                  <label class="form-label">Name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="new_med_name_0"
+                  />
+                </div>
+                <div class="mb-2">
+                  <label class="form-label">Generic Name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="new_med_generic_0"
+                  />
+                </div>
+                <div class="mb-2">
+                  <label class="form-label">Category</label>
+                  <select class="form-select" name="new_med_category_0">
+                    <option value="tablet">Tablet</option>
+                    <option value="syrup">Syrup</option>
+                    <option value="injection">Injection</option>
+                    <option value="cream">Cream</option>
+                    <option value="drops">Drops</option>
+                  </select>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label">Manufacturer</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="new_med_manufacturer_0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Quantity</label>
+              <input
+                type="number"
+                class="form-control"
+                name="quantity[]"
+                min="1"
+                required
+              />
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Purchase Price (₹)</label>
+              <input
+                type="number"
+                class="form-control"
+                name="purchase_price[]"
+                min="0.01"
+                step="0.01"
+                required
+              />
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Selling Price (₹)</label>
+              <input
+                type="number"
+                class="form-control"
+                name="selling_price[]"
+                min="0.01"
+                step="0.01"
+                required
+              />
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Batch Number</label>
+              <input
+                type="text"
+                class="form-control"
+                name="batch_number[]"
+                required
+              />
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Expiry Date</label>
+              <input
+                type="date"
+                class="form-control expiry-date"
+                name="expiry_date[]"
+                required
+              />
+            </div>
+
+            <div class="col-md-1 d-flex align-items-end">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger remove-row-btn"
+                onclick="removeRow(this)"
+                style="display: none"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <button
+              type="button"
+              class="btn btn-outline-primary add-row-btn"
+              onclick="addMedicineRow()"
+            >
+              <i class="fas fa-plus me-2"></i> Add Another Medicine
+            </button>
+          </div>
+        </div>
+
+        <div class="row mt-4">
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-2"></i> Save Purchase
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  let rowCount = 1;
+
+  // Initialize date pickers
+  document.addEventListener("DOMContentLoaded", function () {
+    initDatePickers();
+  });
+
+  function initDatePickers() {
+    // Initialize all expiry date pickers
+    document.querySelectorAll(".expiry-date").forEach(function (elem) {
+      flatpickr(elem, {
+        dateFormat: "Y-m-d",
+        minDate: "today",
+      });
+    });
+
+    // Initialize purchase date picker
+    flatpickr("#purchase_date", {
+      dateFormat: "Y-m-d",
+      maxDate: "today",
+    });
+  }
+
+  // Add new medicine row
+  function addMedicineRow() {
+    const template = document.getElementById("medicine-row-0");
+    const newRow = template.cloneNode(true);
+
+    // Update IDs and names
+    newRow.id = `medicine-row-${rowCount}`;
+
+    // Update the new medicine fields names
+    const newMedicineFields = newRow.querySelectorAll(
+      'input[name^="new_med_"], select[name^="new_med_"]'
+    );
+    newMedicineFields.forEach((field) => {
+      const name = field.getAttribute("name");
+      field.setAttribute("name", name.replace("_0", `_${rowCount}`));
+    });
+
+    // Reset values
+    const inputs = newRow.querySelectorAll("input, select");
+    inputs.forEach((input) => {
+      if (input.type === "select-one") {
+        input.selectedIndex = 0;
+      } else if (input.type !== "button") {
+        input.value = "";
+      }
+    });
+
+    // Show remove button
+    newRow.querySelector(".remove-row-btn").style.display = "block";
+    document
+      .getElementById("medicine-row-0")
+      .querySelector(".remove-row-btn").style.display = "block";
+
+    // Hide new medicine fields
+    newRow.querySelector(".new-medicine-fields").style.display = "none";
+
+    // Add event listener for medicine select
+    newRow
+      .querySelector(".medicine-select")
+      .addEventListener("change", function () {
+        toggleNewMedicineFields(this);
+      });
+
+    // Append to the list
+    document.getElementById("medicine-list").appendChild(newRow);
+
+    // Initialize date picker for the new row
+    initDatePickers();
+
+    rowCount++;
+  }
+
+  // Remove medicine row
+  function removeRow(button) {
+    const row = button.closest(".medicine-row");
+    row.remove();
+
+    // If only one row left, hide its remove button
+    const rows = document.querySelectorAll(".medicine-row");
+    if (rows.length === 1) {
+      rows[0].querySelector(".remove-row-btn").style.display = "none";
+    }
+  }
+
+  // Toggle new medicine fields
+  function toggleNewMedicineFields(select) {
+    const row = select.closest(".medicine-row");
+    const newMedicineFields = row.querySelector(".new-medicine-fields");
+
+    if (select.value === "new") {
+      newMedicineFields.style.display = "block";
+    } else {
+      newMedicineFields.style.display = "none";
+    }
+  }
+
+  // Add event listeners to all medicine selects
+  document.querySelectorAll(".medicine-select").forEach((select) => {
+    select.addEventListener("change", function () {
+      toggleNewMedicineFields(this);
+    });
+  });
+</script>
+{% endblock %}

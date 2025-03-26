@@ -1,0 +1,193 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}Transaction Logs - Medical Inventory{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .log-card {
+        transition: all 0.3s ease;
+    }
+    .log-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .log-header {
+        font-weight: 600;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    .filter-card {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .filter-body {
+        padding: 15px;
+    }
+    .log-item {
+        border-left: 4px solid;
+        margin-bottom: 15px;
+    }
+    .log-item.sale { border-color: #28a745; }
+    .log-item.purchase { border-color: #007bff; }
+    .log-item.stock_add, .log-item.stock_update { border-color: #17a2b8; }
+    .log-item.medicine_add, .log-item.medicine_edit, .log-item.medicine_delete { border-color: #6f42c1; }
+    .log-item.shop_add, .log-item.shop_edit, .log-item.shop_delete { border-color: #fd7e14; }
+    .log-item.alert_resolved { border-color: #ffc107; }
+    .log-item.other { border-color: #6c757d; }
+    .log-time {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .log-badge {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+    .bg-purple {
+        background-color: #6f42c1;
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Transaction Logs</h2>
+    </div>
+
+    <!-- Filters -->
+    <div class="card filter-card">
+        <div class="filter-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="action_type" class="form-label">Action Type</label>
+                    <select class="form-select" id="action_type" name="action_type">
+                        <option value="">All Actions</option>
+                        {% for action_type in action_types %}
+                        <option value="{{ action_type }}" {% if request.GET.action_type == action_type %}selected{% endif %}>
+                            {{ action_type|title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="shop_id" class="form-label">Shop</label>
+                    <select class="form-select" id="shop_id" name="shop_id">
+                        <option value="">All Shops</option>
+                        {% for shop in shops %}
+                        <option value="{{ shop.id }}" {% if request.GET.shop_id == shop.id|stringformat:"i" %}selected{% endif %}>
+                            {{ shop.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="medicine_id" class="form-label">Medicine</label>
+                    <select class="form-select" id="medicine_id" name="medicine_id">
+                        <option value="">All Medicines</option>
+                        {% for medicine in medicines %}
+                        <option value="{{ medicine.primary_id }}" {% if request.GET.medicine_id == medicine.primary_id %}selected{% endif %}>
+                            {{ medicine.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Logs List -->
+    <div class="card">
+        <div class="card-body">
+            {% if logs %}
+                {% for log in logs %}
+                <div class="card log-item {{ log.action_type }} log-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                {% if log.action_type == 'sale' %}
+                                <span class="badge bg-success log-badge">Sale</span>
+                                {% elif log.action_type == 'purchase' %}
+                                <span class="badge bg-primary log-badge">Purchase</span>
+                                {% elif log.action_type == 'stock_add' %}
+                                <span class="badge bg-info log-badge">Stock Added</span>
+                                {% elif log.action_type == 'stock_update' %}
+                                <span class="badge bg-info log-badge">Stock Updated</span>
+                                {% elif log.action_type == 'medicine_add' %}
+                                <span class="badge bg-purple log-badge">Medicine Added</span>
+                                {% elif log.action_type == 'medicine_edit' %}
+                                <span class="badge bg-purple log-badge">Medicine Edited</span>
+                                {% elif log.action_type == 'medicine_delete' %}
+                                <span class="badge bg-danger log-badge">Medicine Deleted</span>
+                                {% elif log.action_type == 'shop_add' %}
+                                <span class="badge bg-warning log-badge">Shop Added</span>
+                                {% elif log.action_type == 'shop_edit' %}
+                                <span class="badge bg-warning log-badge">Shop Edited</span>
+                                {% elif log.action_type == 'shop_delete' %}
+                                <span class="badge bg-danger log-badge">Shop Deleted</span>
+                                {% elif log.action_type == 'alert_resolved' %}
+                                <span class="badge bg-warning log-badge">Alert Resolved</span>
+                                {% else %}
+                                <span class="badge bg-secondary log-badge">{{ log.action_type|title }}</span>
+                                {% endif %}
+                                
+                                {% if log.medicine %}
+                                <span class="badge bg-secondary log-badge">{{ log.medicine.name }}</span>
+                                {% endif %}
+                                {% if log.shop %}
+                                <span class="badge bg-info log-badge">{{ log.shop.name }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="log-time">{{ log.created_at|date:"d M Y, h:i A" }}</div>
+                        </div>
+                        <p class="mt-2 mb-0">{{ log.description }}</p>
+                        {% if log.quantity or log.amount %}
+                        <div class="mt-2 small">
+                            {% if log.quantity %}
+                            <span class="me-3">Quantity: {{ log.quantity }}</span>
+                            {% endif %}
+                            {% if log.amount %}
+                            <span>Amount: ₹{{ log.amount|floatformat:2 }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">No transaction logs found matching your criteria.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date pickers
+        flatpickr("#start_date", {
+            dateFormat: "Y-m-d"
+        });
+        
+        flatpickr("#end_date", {
+            dateFormat: "Y-m-d"
+        });
+    });
+</script>
+{% endblock %} 

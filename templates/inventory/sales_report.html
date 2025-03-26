@@ -1,4 +1,4 @@
-{% extends 'inventory/base.html' %}
+{% comment %} {% extends 'inventory/base.html' %}
 
 {% block content %}
 <h2>Sales Report</h2>
@@ -34,4 +34,4 @@
     const chartData = JSON.parse('{{ chart|escapejs }}');
     Plotly.newPlot('sales-chart', chartData.data, chartData.layout);
 </script>
-{% endblock %} 
+{% endblock %}  {% endcomment %}

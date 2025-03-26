@@ -1,121 +1,375 @@
-{% extends 'inventory/base.html' %}
-
-{% block title %}Sales Analysis - Medical Inventory{% endblock %}
-
-{% block main_content %}
+{% extends 'inventory/base.html' %} {% load humanize %} {% block title %}Sales
+Analysis - Medical Inventory{% endblock %} {% block extra_css %}
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+/>
+{% endblock %} {% block main_content %}
 <div class="container-fluid">
-    <!-- Summary Stats -->
-    <div class="row mb-4">
+  <!-- Date Filter -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3">
         <div class="col-md-4">
-            <div class="card stats-card primary">
-                <div class="card-body">
-                    <h5 class="card-title">Total Revenue</h5>
-                    <p class="card-text display-4">₹{{ total_sales.total_amount|floatformat:2 }}</p>
-                    <small class="text-muted">Total Units Sold: {{ total_sales.total_quantity }}</small>
-                </div>
-            </div>
+          <label for="start_date" class="form-label">Start Date</label>
+          <input
+            type="date"
+            class="form-control"
+            id="start_date"
+            name="start_date"
+            value="{{ start_date|date:'Y-m-d' }}"
+          />
         </div>
         <div class="col-md-4">
-            <div class="card stats-card success">
-                <div class="card-body">
-                    <h5 class="card-title">Average Transaction</h5>
-                    <p class="card-text display-4">₹{{ total_sales.avg_transaction|floatformat:2 }}</p>
-                </div>
-            </div>
+          <label for="end_date" class="form-label">End Date</label>
+          <input
+            type="date"
+            class="form-control"
+            id="end_date"
+            name="end_date"
+            value="{{ end_date|date:'Y-m-d' }}"
+          />
         </div>
-        <div class="col-md-4">
-            <div class="card stats-card warning">
-                <div class="card-body">
-                    <h5 class="card-title">Payment Methods</h5>
-                    <div id="payment-chart"></div>
-                </div>
-            </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary">Apply Filter</button>
         </div>
+      </form>
     </div>
+  </div>
 
-    <!-- Shop Analysis -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Shop Performance</h5>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Shop</th>
-                                    <th>Total Sales</th>
-                                    <th>Units Sold</th>
-                                    <th>Unique Medicines</th>
-                                    <th>Performance</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for shop in shop_analysis %}
-                                <tr>
-                                    <td>{{ shop.name }}</td>
-                                    <td>₹{{ shop.total_sales|default:0|floatformat:2 }}</td>
-                                    <td>{{ shop.total_quantity|default:0 }}</td>
-                                    <td>{{ shop.unique_medicines }}</td>
-                                    <td>
-                                        <div class="progress">
-                                            <div class="progress-bar" role="progressbar" 
-                                                 style="width: {% widthratio shop.total_sales|default:0 total_sales.total_amount 100 %}%">
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Medicine Performance by Shop -->
-    <div class="card mb-4">
+  <!-- Summary Stats -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card stats-card primary">
         <div class="card-body">
-            <h5 class="card-title">Medicine Performance by Shop</h5>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Medicine</th>
-                            <th>Shop</th>
-                            <th>Units Sold</th>
-                            <th>Revenue</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in medicine_by_shop %}
-                        <tr>
-                            <td>{{ item.medicine__name }}</td>
-                            <td>{{ item.shop__name }}</td>
-                            <td>{{ item.total_quantity }}</td>
-                            <td>₹{{ item.total_amount|floatformat:2 }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+          <h5 class="card-title">Total Revenue</h5>
+          <p class="card-text display-4">
+            ₹{{ total_sales.total_amount|floatformat:2 }}
+          </p>
+          <small class="text-muted"
+            >Total Units Sold: {{ total_sales.total_quantity }}</small
+          >
         </div>
+      </div>
     </div>
-</div>
-{% endblock %}
+    <div class="col-md-3">
+      <div class="card stats-card success">
+        <div class="card-body">
+          <h5 class="card-title">Average Transaction</h5>
+          <p class="card-text display-4">
+            ₹{{ total_sales.avg_transaction|floatformat:2 }}
+          </p>
+          <small class="text-muted"
+            >Total Transactions: {{ total_sales.total_transactions }}</small
+          >
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stats-card info">
+        <div class="card-body">
+          <h5 class="card-title">Date Range</h5>
+          <p class="card-text h5">
+            {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}
+          </p>
+          <small class="text-muted"
+            >{{ start_date|timesince:end_date }} of data</small
+          >
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stats-card warning">
+        <div class="card-body">
+          <h5 class="card-title">Payment Methods</h5>
+          <div id="payment-chart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-{% block extra_js %}
+  <!-- Shop Performance -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Shop Performance</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Shop</th>
+                  <th>Revenue</th>
+                  <th>Market Share</th>
+                  <th>Units Sold</th>
+                  <th>Trend</th>
+                  <th>Sales/Day</th>
+                  <th>Avg Transaction</th>
+                  <th>Performance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for shop in shop_performance %}
+                <tr>
+                  <td>
+                    <a href="{% url 'shop_detail' shop.id %}"
+                      >{{ shop.name }}</a
+                    >
+                    <br /><small class="text-muted">{{ shop.location }}</small>
+                  </td>
+                  <td>₹{{ shop.sales_amount|floatformat:2 }}</td>
+                  <td>{{ shop.market_share }}%</td>
+                  <td>{{ shop.sales_quantity }}</td>
+                  <td>
+                    {% if shop.trend_pct > 0 %}
+                    <span class="text-success">
+                      <i class="fas fa-arrow-up"></i> {{ shop.trend_pct }}%
+                    </span>
+                    {% elif shop.trend_pct < 0 %}
+                    <span class="text-danger">
+                      <i class="fas fa-arrow-down"></i> 
+                      {% widthratio shop.trend_pct|add:"-1" 1 100 %}%
+                  </span>
+                  
+                    {% else %}
+                    <span class="text-muted">0%</span>
+                    {% endif %}
+                  </td>
+                  <td>₹{{ shop.sales_per_day|floatformat:2 }}</td>
+                  <td>₹{{ shop.avg_transaction|floatformat:2 }}</td>
+                  <td>
+                    <div class="progress">
+                      <div
+                        class="progress-bar"
+                        role="progressbar"
+                        style="width: {{ shop.market_share }}%"
+                      ></div>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop Performance Details -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Shop Details</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Shop</th>
+                  <th>Unique Medicines</th>
+                  <th>Unique Customers</th>
+                  <th>Revenue per Medicine</th>
+                  <th>Transactions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for shop in shop_performance %}
+                <tr>
+                  <td>{{ shop.name }}</td>
+                  <td>{{ shop.unique_medicines }}</td>
+                  <td>{{ shop.unique_customers }}</td>
+                  <td>₹{{ shop.revenue_per_medicine|floatformat:2 }}</td>
+                  <td>{{ shop.transaction_count }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Top Selling Medicines</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Medicine</th>
+                  <th>Revenue</th>
+                  <th>Units Sold</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for med in top_medicines %}
+                <tr>
+                  <td>
+                    <a
+                      href="{% url 'medicine_detail' med.medicine__primary_id %}"
+                    >
+                      {{ med.medicine__name }}
+                    </a>
+                  </td>
+                  <td>₹{{ med.total_amount|floatformat:2 }}</td>
+                  <td>{{ med.total_quantity }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Medicine Performance by Shop -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">Medicine Performance by Shop</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Shop</th>
+              <th>Units Sold</th>
+              <th>Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in medicine_by_shop %}
+            <tr>
+              <td>{{ item.medicine__name }}</td>
+              <td>{{ item.shop__name }}</td>
+              <td>{{ item.total_quantity }}</td>
+              <td>₹{{ item.total_amount|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly Trends & Loyal Customers -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Weekly Sales Trends</h5>
+        </div>
+        <div class="card-body">
+          <div id="weekly-trends-chart"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Loyal Customers</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Spent</th>
+                  <th>Visits</th>
+                  <th>Last Visit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for customer in loyal_customers %}
+                <tr>
+                  <td>
+                    {{ customer.customer_name }} <br />
+                    <small class="text-muted"
+                      >{{ customer.customer_phone }}</small
+                    >
+                  </td>
+                  <td>₹{{ customer.total_spent|floatformat:2 }}</td>
+                  <td>{{ customer.visit_count }}</td>
+                  <td>{{ customer.last_visit|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
-    // Payment methods pie chart
-    const paymentData = {
-        values: [{% for stat in payment_stats %}{{ stat.total }},{% endfor %}],
-        labels: [{% for stat in payment_stats %}'{{ stat.payment_method|upper }}',{% endfor %}],
-        type: 'pie'
-    };
-    Plotly.newPlot('payment-chart', [paymentData], {
-        height: 200,
-        margin: { t: 0, b: 0, l: 0, r: 0 }
-    });
+  // Initialize date pickers
+  flatpickr("#start_date", {
+      dateFormat: "Y-m-d",
+      maxDate: "today"
+  });
+
+  flatpickr("#end_date", {
+      dateFormat: "Y-m-d",
+      maxDate: "today"
+  });
+
+  // Payment methods pie chart
+  const paymentData = {
+      values: [{% for stat in payment_stats %}{{ stat.total }},{% endfor %}],
+      labels: [{% for stat in payment_stats %}'{{ stat.payment_method|upper }}',{% endfor %}],
+      type: 'pie'
+  };
+  Plotly.newPlot('payment-chart', [paymentData], {
+      height: 200,
+      margin: { t: 0, b: 0, l: 0, r: 0 }
+  });
+
+  // Weekly sales trends
+  const weeklyData = [];
+  {% for week, avg in weekly_trends %}
+  weeklyData.push({
+      x: '{{ week.year }}-W{{ week.week }}',
+      y: {{ week.total_sales|default:0 }},
+      avg: {{ avg|default:0 }}
+  });
+  {% endfor %}
+
+  const weeklyX = weeklyData.map(d => d.x);
+  const weeklyY = weeklyData.map(d => d.y);
+  const weeklyAvg = weeklyData.map(d => d.avg);
+
+  const trace1 = {
+      x: weeklyX,
+      y: weeklyY,
+      type: 'bar',
+      name: 'Weekly Sales'
+  };
+
+  const trace2 = {
+      x: weeklyX,
+      y: weeklyAvg,
+      type: 'scatter',
+      mode: 'lines+markers',
+      name: '3-Week Moving Average'
+  };
+
+  Plotly.newPlot('weekly-trends-chart', [trace1, trace2], {
+      title: 'Weekly Sales Trend',
+      xaxis: { title: 'Week' },
+      yaxis: { title: 'Sales Amount (₹)' }
+  });
 </script>
 {% endblock %}

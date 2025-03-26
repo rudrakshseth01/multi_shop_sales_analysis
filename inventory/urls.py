@@ -31,6 +31,12 @@ urlpatterns = [
     path('sales/add/', views.sales_add, name='sales_add'),
     path('sales/', views.sales_list, name='sales_list'),
     
+    # Purchase
+    path('purchase/', views.make_purchase, name='make_purchase'),
+    
+    # Logs
+    path('logs/', views.transaction_logs, name='transaction_logs'),
+    
     # API endpoints
     path('api/medicine/<str:primary_id>/sales/', views.medicine_sales_chart, name='medicine_sales_chart'),
     path('api/shop/<int:shop_id>/sales/', views.shop_sales_chart, name='shop_sales_chart'),

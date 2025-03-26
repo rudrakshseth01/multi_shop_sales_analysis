@@ -1,1 +1,7 @@
 Dashboard error: Reverse for 'shops_overview' not found. 'shops_overview' is not a valid view function or pattern name.
+ERROR 2025-03-27 00:25:00,973 views Sales analysis error: inventory/analysis/sales_analysis.html
+ERROR 2025-03-27 00:25:03,429 views Sales analysis error: inventory/analysis/sales_analysis.html
+ERROR 2025-03-27 00:25:04,806 views Sales analysis error: inventory/analysis/sales_analysis.html
+ERROR 2025-03-27 00:25:06,068 views Sales analysis error: inventory/analysis/sales_analysis.html
+ERROR 2025-03-27 00:25:06,875 views Sales analysis error: inventory/analysis/sales_analysis.html
+ERROR 2025-03-27 00:25:07,203 views Sales analysis error: inventory/analysis/sales_analysis.html
