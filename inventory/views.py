@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import Decimal
+from django.views.decorators.http import require_GET
 
 from .models import Medicine, Shop, MedicineStock, MedicineSale, StockAlert, TransactionLog
 import logging
@@ -21,7 +22,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import Medicine, Shop, MedicineStock, MedicineSale
 
-logger = logging.getLogger('inventory')
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Medicine, Shop, MedicineStock, MedicineSale
+
 
 def dashboard(request):
     try:
@@ -314,94 +318,151 @@ from .models import Medicine, Shop, MedicineStock, MedicineSale
 
 
 def sales_add(request):
-    if request.method == "POST":
+    if request.method == 'POST':
         try:
-            # Extract data from the form
+            # Get form data
             medicine_id = request.POST.get('medicine_id')
             shop_id = request.POST.get('shop_id')
-            quantity = int(request.POST.get('quantity'))
+            stock_id = request.POST.get('stock_id')  # Get stock_id from form data
+            quantity = int(request.POST.get('quantity', 0))
             payment_method = request.POST.get('payment_method')
+            selling_price = Decimal(request.POST.get('selling_price', 0))
             customer_name = request.POST.get('customer_name', '')
             customer_phone = request.POST.get('customer_phone', '')
-
-            # Fetch related objects
-            medicine = get_object_or_404(Medicine, primary_id=medicine_id)
-            shop = get_object_or_404(Shop, id=shop_id)
             
-            # Fetch the MedicineStock object
-            stocks = MedicineStock.objects.filter(medicine=medicine, shop=shop)
-            if stocks.count() > 1:
-                messages.error(request, "Multiple stock records found for the selected medicine and shop. Please resolve duplicates.")
+            # Basic validation
+            if not all([medicine_id, shop_id, stock_id, quantity, payment_method, selling_price]):
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'All required fields must be filled'
+                    })
+                messages.error(request, "All required fields must be filled")
                 return redirect('sales_add')
             
-            stock = stocks.first()
-            if not stock:
-                messages.error(request, "Stock not found for the selected medicine and shop.")
+            # Validate quantity
+            if quantity <= 0:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Quantity must be greater than 0'
+                    })
+                messages.error(request, "Quantity must be greater than 0")
                 return redirect('sales_add')
-
+            
+            # Validate selling price
+            if selling_price <= 0:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Selling price must be greater than 0'
+                    })
+                messages.error(request, "Selling price must be greater than 0")
+                return redirect('sales_add')
+            
+            # Get stock information
+            try:
+                stock = MedicineStock.objects.get(id=stock_id)
+            except MedicineStock.DoesNotExist:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Stock not found'
+                    })
+                messages.error(request, "Stock not found")
+                return redirect('sales_add')
+            
             # Validate stock availability
             if stock.quantity < quantity:
-                messages.error(request, "Insufficient stock for this sale.")
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Only {stock.quantity} units available in stock'
+                    })
+                messages.error(request, f"Only {stock.quantity} units available in stock")
                 return redirect('sales_add')
-
-            # Calculate total amount
-            total_amount = quantity * stock.price
-
-            # Create the sale record
+            
+            # Validate expiry date
+            if stock.expiry_date <= timezone.now().date():
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Cannot sell expired medicine'
+                    })
+                messages.error(request, "Cannot sell expired medicine")
+                return redirect('sales_add')
+            
+            # Create sale record with stock reference
             sale = MedicineSale.objects.create(
-                medicine=medicine,
-                shop=shop,
-                stock=stock,
+                medicine_id=medicine_id,
+                shop_id=shop_id,
+                stock_id=stock_id,  # Use the stock_id from form data
                 quantity=quantity,
-                unit_price=stock.price,
-                total_amount=total_amount,
+                unit_price=selling_price,
+                total_amount=quantity * selling_price,
                 payment_method=payment_method,
                 customer_name=customer_name,
-                customer_phone=customer_phone,
+                customer_phone=customer_phone
             )
-
-            # Update stock quantity and properly save to trigger alerts
-            stock.quantity -= quantity
-            stock.save()  # This will trigger check_and_create_alerts()
             
-            # Log the transaction
+            # Update stock
+            stock.quantity -= quantity
+            stock.save()
+            
+            # Log transaction
             TransactionLog.objects.create(
                 action_type='sale',
-                description=f"Sale of {quantity} units of {medicine.name} at {shop.name}",
-                medicine=medicine,
-                shop=shop,
+                description=f"Sale of {quantity} units of {sale.medicine.name} at {sale.shop.name}",
+                medicine=sale.medicine,
+                shop=sale.shop,
                 quantity=quantity,
-                amount=total_amount
+                amount=sale.total_amount
             )
-
-            # Fetch recent sales for the modal
-            recent_sales = MedicineSale.objects.filter(shop=shop).order_by('-date')[:10]
-            sales_data = [{
-                'medicine': sale.medicine.name,
-                'shop': sale.shop.name,
-                'quantity': sale.quantity,
-                'total': float(sale.total_amount),
-                'customer': sale.customer_name or 'N/A',
-                'payment_method': sale.get_payment_method_display(),
-                'timestamp': sale.date.strftime("%d %b %Y %H:%M")
-            } for sale in recent_sales]
-
-            # Return JSON response for AJAX
+            
+            # If it's an AJAX request, return the updated sales list
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                recent_sales = MedicineSale.objects.all().order_by('-date')[:10]
+                sales_data = [{
+                    'medicine': sale.medicine.name,
+                    'shop': sale.shop.name,
+                    'quantity': sale.quantity,
+                    'total': float(sale.total_amount),
+                    'customer': sale.customer_name or 'N/A',
+                    'payment_method': sale.get_payment_method_display(),
+                    'timestamp': sale.date.strftime("%d %b %Y %H:%M")
+                } for sale in recent_sales]
+                
                 return JsonResponse({
                     'success': True,
-                    'sales': sales_data
+                    'sales': sales_data,
+                    'message': "Sale recorded successfully"
                 })
-
-            messages.success(request, "Sale added successfully.")
-            return redirect('sales_list')
-
+            
+            messages.success(request, "Sale recorded successfully")
+            return redirect('sales_add')
+            
+        except ValueError as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Invalid value: {str(e)}'
+                })
+            messages.error(request, f"Invalid value: {str(e)}")
+            return redirect('sales_add')
         except Exception as e:
+            logger.error(f"Error adding sale: {str(e)}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Error adding sale: {str(e)}'
+                })
             messages.error(request, f"Error adding sale: {str(e)}")
             return redirect('sales_add')
 
     else:
+        # Handle GET request
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # Return recent sales for AJAX request
             recent_sales = MedicineSale.objects.all().order_by('-date')[:10]
             sales_data = [{
                 'medicine': sale.medicine.name,
@@ -426,26 +487,7 @@ def sales_add(request):
             'shops': shops,
         }
         return render(request, 'inventory/record_sale.html', context)
-# def sales_add(request):
-#     try:
-#         sales = Shop.objects.create(
-            
-#             # name=request.POST['name'],
-#             # location=request.POST['location'],
-#             # contact_number=request.POST['contact_number'],
-#             # license_number=request.POST['license_number'],
-#             # opening_time='09:00:00',  # Default opening time
-#             # closing_time='21:00:00'   # Default closing time
-#         )
-#         messages.success(request, f"Shop '{sales.name}' added successfully")
-#     except Exception as e:
-#         messages.error(request, f"Error adding sales: {str(e)}")
-#     # return redirect('shop_list')
-#     return render(request, 'inventory/sales/add.html')
 
-# 
-# 
-# 
 def sales_list(request):
     sales = MedicineSale.objects.all()
     sales_filter = SaleFilter(request.GET, queryset=sales)
@@ -1055,3 +1097,47 @@ def transaction_logs(request):
     }
     
     return render(request, 'inventory/logs.html', context) 
+
+@require_GET
+def check_stock(request, medicine_id, shop_id):
+    try:
+        stock = MedicineStock.objects.get(medicine_id=medicine_id, shop_id=shop_id)
+        expiry_date = stock.expiry_date
+        available_stock = stock.quantity
+        selling_price = stock.price
+
+        # Check if stock is expired
+        if expiry_date <= timezone.now().date():
+            return JsonResponse({
+                'error': 'Stock has expired',
+                'expiry_date': expiry_date.strftime('%Y-%m-%d'),
+                'available_stock': available_stock,
+                'selling_price': selling_price,
+                'stock_id': stock.id
+            })
+
+        # Check if stock is low
+        if available_stock <= stock.reorder_level:
+            return JsonResponse({
+                'error': 'Low stock alert',
+                'expiry_date': expiry_date.strftime('%Y-%m-%d'),
+                'available_stock': available_stock,
+                'selling_price': selling_price,
+                'stock_id': stock.id
+            })
+
+        return JsonResponse({
+            'expiry_date': expiry_date.strftime('%Y-%m-%d'),
+            'available_stock': available_stock,
+            'selling_price': selling_price,
+            'stock_id': stock.id
+        })
+
+    except MedicineStock.DoesNotExist:
+        return JsonResponse({
+            'error': 'Stock not found for this medicine and shop'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Error checking stock: {str(e)}'
+        }) 

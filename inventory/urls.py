@@ -40,4 +40,5 @@ urlpatterns = [
     # API endpoints
     path('api/medicine/<str:primary_id>/sales/', views.medicine_sales_chart, name='medicine_sales_chart'),
     path('api/shop/<int:shop_id>/sales/', views.shop_sales_chart, name='shop_sales_chart'),
+    path('api/check-stock/<str:medicine_id>/<int:shop_id>/', views.check_stock, name='check_stock'),
 ] 

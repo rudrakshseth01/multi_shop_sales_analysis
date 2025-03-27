@@ -1,188 +1,427 @@
-{% extends 'inventory/base.html' %}
-
-{% block title %}Record Sale - Medical Inventory{% endblock %}
-
-{% block main_content %}
+{% extends 'inventory/base.html' %} {% block title %}Record Sale - Medical
+Inventory{% endblock %} {% block main_content %}
 <div class="container-fluid">
-    <!-- Sales List Modal -->
-    <div class="modal fade" id="salesListModal" tabindex="-1" aria-labelledby="salesListModalLabel">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="salesListModalLabel">📋 Recent Sales</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>Medicine</th>
-                                    <th>Shop</th>
-                                    <th>Qty</th>
-                                    <th>Total</th>
-                                    <th>Customer</th>
-                                    <th>Payment</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="salesListBody">
-                                <!-- Sales data will be inserted here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+  <!-- Sales List Modal -->
+  <div
+    class="modal fade"
+    id="salesListModal"
+    tabindex="-1"
+    aria-labelledby="salesListModalLabel"
+  >
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="salesListModalLabel">📋 Recent Sales</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+          ></button>
         </div>
-    </div>
-
-    <!-- Existing Form -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Record Sale</h2>
-        <button id="viewSalesListBtn" class="btn btn-classic">
-            <i class="fas fa-list me-2"></i>View Sales List
-        </button>
-    </div>
-
-    {% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
-            {{ message }}
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Medicine</th>
+                  <th>Shop</th>
+                  <th>Qty</th>
+                  <th>Total</th>
+                  <th>Customer</th>
+                  <th>Payment</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="salesListBody">
+                <!-- Sales data will be inserted here -->
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing Form -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Record Sale</h2>
+    <button id="viewSalesListBtn" class="btn btn-classic">
+      <i class="fas fa-list me-2"></i>View Sales List
+    </button>
+  </div>
+
+  <div id="messages" class="messages">
+    {% if messages %} {% for message in messages %}
+    <div
+      class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}"
+      role="alert"
+    >
+      {{ message }}
+    </div>
+    {% endfor %} {% endif %}
+  </div>
+
+  <form id="saleForm" class="row g-3">
+    {% csrf_token %}
+
+    <div class="col-md-6">
+      <label for="medicine" class="form-label">Medicine</label>
+      <select id="medicine" name="medicine_id" class="form-select" required>
+        <option value="">Select Medicine</option>
+        {% for medicine in medicines %}
+        <option value="{{ medicine.primary_id }}">{{ medicine.name }}</option>
         {% endfor %}
+      </select>
     </div>
-    {% endif %}
 
-    <form method="post" class="row g-3" id="saleForm">
-        {% csrf_token %}
-        
-        <div class="col-md-6">
-            <label for="medicine" class="form-label">Medicine</label>
-            <select id="medicine" name="medicine_id" class="form-select" required>
-                <option value="">Select Medicine</option>
-                {% for medicine in medicines %}
-                <option value="{{ medicine.primary_id }}">{{ medicine.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <div class="col-md-6">
+      <label for="shop" class="form-label">Shop</label>
+      <select id="shop" name="shop_id" class="form-select" required>
+        <option value="">Select Shop</option>
+        {% for shop in shops %}
+        <option value="{{ shop.id }}">{{ shop.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-        <div class="col-md-6">
-            <label for="shop" class="form-label">Shop</label>
-            <select id="shop" name="shop_id" class="form-select" required>
-                <option value="">Select Shop</option>
-                {% for shop in shops %}
-                <option value="{{ shop.id }}">{{ shop.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <div class="col-md-6">
+      <label for="quantity" class="form-label">Quantity</label>
+      <input
+        type="number"
+        id="quantity"
+        name="quantity"
+        class="form-control"
+        min="1"
+        required
+      />
+      <div id="stockInfo" class="form-text"></div>
+    </div>
 
-        <div class="col-md-6">
-            <label for="quantity" class="form-label">Quantity</label>
-            <input type="number" id="quantity" name="quantity" class="form-control" min="1" required>
-        </div>
+    <div class="col-md-6">
+      <label for="selling_price" class="form-label"
+        >Selling Price per Pack</label
+      >
+      <div class="input-group">
+        <span class="input-group-text">₹</span>
+        <input
+          type="number"
+          id="selling_price"
+          name="selling_price"
+          class="form-control"
+          step="0.01"
+          min="0"
+          required
+        />
+      </div>
+      <div id="totalAmount" class="form-text"></div>
+    </div>
 
-        <div class="col-md-6">
-            <label for="payment" class="form-label">Payment Method</label>
-            <select id="payment" name="payment_method" class="form-select" required>
-                <option value="">Select Payment</option>
-                <option value="cash">Cash</option>
-                <option value="upi">UPI</option>
-                <option value="card">Card</option>
-            </select>
-        </div>
+    <div class="col-md-6">
+      <label for="payment" class="form-label">Payment Method</label>
+      <select id="payment" name="payment_method" class="form-select" required>
+        <option value="">Select Payment</option>
+        <option value="cash">Cash</option>
+        <option value="upi">UPI</option>
+        <option value="card">Card</option>
+      </select>
+    </div>
 
-        <div class="col-md-6">
-            <label for="customerName" class="form-label">Customer Name</label>
-            <input type="text" id="customerName" name="customer_name" class="form-control">
-        </div>
+    <div class="col-md-6">
+      <label for="customerName" class="form-label">Customer Name</label>
+      <input
+        type="text"
+        id="customerName"
+        name="customer_name"
+        class="form-control"
+      />
+    </div>
 
-        <div class="col-md-6">
-            <label for="customerPhone" class="form-label">Customer Phone</label>
-            <input type="text" id="customerPhone" name="customer_phone" class="form-control">
-        </div>
+    <div class="col-md-6">
+      <label for="customerPhone" class="form-label">Customer Phone</label>
+      <input
+        type="text"
+        id="customerPhone"
+        name="customer_phone"
+        class="form-control"
+      />
+    </div>
 
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-save me-2"></i>Record Sale
-            </button>
-        </div>
-    </form>
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary w-100">
+        <i class="fas fa-save me-2"></i>Record Sale
+      </button>
+    </div>
+  </form>
 </div>
 
 <script>
-    // Handle form submission
-    document.getElementById('saleForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        
-        fetch("{% url 'sales_add' %}", {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': '{{ csrf_token }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if(data.success) {
-                updateSalesList(data.sales);
-                new bootstrap.Modal(document.getElementById('salesListModal')).show();
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            window.location.reload();  // Reload on error to show messages
-        });
-    });
-    
-    // Handle "View Sales List" button click
-    document.getElementById('viewSalesListBtn').addEventListener('click', function() {
-        fetch("{% url 'sales_add' %}?get_sales=true", {  // Added query parameter
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            if(data.success) {
-                updateSalesList(data.sales);
-                new bootstrap.Modal(document.getElementById('salesListModal')).show();
-            }
-        })
-        .catch(error => {
-            console.error('Fetch error:', error);
-            alert('Error loading sales data');
-        });
-    });
-    
-    // Update sales list function
-    function updateSalesList(sales) {
-        const salesListBody = document.getElementById('salesListBody');
-        salesListBody.innerHTML = sales.map((sale, index) => `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${sale.medicine}</td>
-                <td>${sale.shop}</td>
-                <td>${sale.quantity}</td>
-                <td>₹${sale.total.toFixed(2)}</td>
-                <td>${sale.customer}</td>
-                <td><span class="badge ${sale.payment_method.toLowerCase()}">${sale.payment_method}</span></td>
-                <td>${sale.timestamp}</td>
-            </tr>
-        `).join('');
+  // Function to show error message
+  function showError(message) {
+    const alertDiv = document.createElement("div");
+    alertDiv.className = "alert alert-danger alert-dismissible fade show";
+    alertDiv.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.getElementById("messages").appendChild(alertDiv);
+    setTimeout(() => {
+      alertDiv.remove();
+    }, 5000);
+  }
+
+  // Function to show success message
+  function showSuccess(message) {
+    const alertDiv = document.createElement("div");
+    alertDiv.className = "alert alert-success alert-dismissible fade show";
+    alertDiv.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.getElementById("messages").appendChild(alertDiv);
+    setTimeout(() => {
+      alertDiv.remove();
+    }, 5000);
+  }
+
+  // Function to check stock availability
+  function checkStock() {
+    const medicineId = document.getElementById("medicine").value;
+    const shopId = document.getElementById("shop").value;
+    const stockInfo = document.getElementById("stockInfo");
+
+    if (!medicineId || !shopId) {
+      stockInfo.innerHTML = "";
+      document.getElementById("selling_price").value = "";
+      document.getElementById("totalAmount").innerHTML = "";
+      return;
     }
-    </script>
+
+    fetch(`/api/check-stock/${medicineId}/${shopId}/`, {
+      method: "GET",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.error) {
+          stockInfo.innerHTML = `<span class="text-danger">${data.error}</span>`;
+          document.getElementById("selling_price").value = "";
+          return;
+        }
+
+        const expiryDate = new Date(data.expiry_date);
+        const today = new Date();
+        const daysUntilExpiry = Math.floor(
+          (expiryDate - today) / (1000 * 60 * 60 * 24)
+        );
+
+        let stockMessage = `Available Stock: ${data.available_stock} units`;
+        if (daysUntilExpiry <= 30) {
+          stockMessage += ` | Expires in ${daysUntilExpiry} days`;
+        }
+
+        stockInfo.innerHTML = stockMessage;
+        document.getElementById("selling_price").value = data.selling_price;
+        calculateTotal();
+      })
+      .catch((error) => {
+        stockInfo.innerHTML =
+          '<span class="text-danger">Error checking stock</span>';
+        document.getElementById("selling_price").value = "";
+        console.error("Stock check error:", error);
+      });
+  }
+
+  // Function to calculate total amount
+  function calculateTotal() {
+    const quantity = parseInt(document.getElementById("quantity").value) || 0;
+    const sellingPrice =
+      parseFloat(document.getElementById("selling_price").value) || 0;
+    const totalAmount = quantity * sellingPrice;
+    document.getElementById(
+      "totalAmount"
+    ).innerHTML = `Total Amount: ₹${totalAmount.toFixed(2)}`;
+  }
+
+  // Function to update sales list
+  function updateSalesList(sales) {
+    const salesListBody = document.getElementById("salesListBody");
+    if (!sales || sales.length === 0) {
+      salesListBody.innerHTML =
+        '<tr><td colspan="8" class="text-center">No recent sales</td></tr>';
+      return;
+    }
+
+    salesListBody.innerHTML = sales
+      .map(
+        (sale, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${sale.medicine}</td>
+        <td>${sale.shop}</td>
+        <td>${sale.quantity}</td>
+        <td>₹${sale.total.toFixed(2)}</td>
+        <td>${sale.customer}</td>
+        <td><span class="badge ${sale.payment_method.toLowerCase()}">${
+          sale.payment_method
+        }</span></td>
+        <td>${sale.timestamp}</td>
+      </tr>
+    `
+      )
+      .join("");
+  }
+
+  // Function to show sales list modal
+  function showSalesList() {
+    fetch("{% url 'sales_add' %}?get_sales=true", {
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.success) {
+          updateSalesList(data.sales);
+          const modal = new bootstrap.Modal(
+            document.getElementById("salesListModal")
+          );
+          modal.show();
+        } else {
+          showError(data.error || "Error loading sales data");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showError("Error loading sales data");
+      });
+  }
+
+  // Handle form submission
+  document.getElementById("saleForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const medicineId = document.getElementById("medicine").value;
+    const shopId = document.getElementById("shop").value;
+    const quantity = parseInt(document.getElementById("quantity").value);
+    const sellingPrice = parseFloat(
+      document.getElementById("selling_price").value
+    );
+
+    // Validate quantity
+    if (quantity <= 0) {
+      showError("Quantity must be greater than 0");
+      return;
+    }
+
+    // Validate selling price
+    if (sellingPrice <= 0) {
+      showError("Selling price must be greater than 0");
+      return;
+    }
+
+    // Check stock availability before submission
+    fetch(`/api/check-stock/${medicineId}/${shopId}/`, {
+      method: "GET",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.error) {
+          showError(data.error);
+          return;
+        }
+
+        if (data.available_stock < quantity) {
+          showError(`Only ${data.available_stock} units available in stock`);
+          return;
+        }
+
+        // Proceed with form submission
+        const formData = new FormData(this);
+        formData.append("stock_id", data.stock_id); // Add stock_id to form data
+
+        fetch("{% url 'sales_add' %}", {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              // Update the sales list and show the modal
+              updateSalesList(data.sales);
+              const modal = new bootstrap.Modal(
+                document.getElementById("salesListModal")
+              );
+              modal.show();
+
+              // Reset the form
+              this.reset();
+              document.getElementById("stockInfo").innerHTML = "";
+              document.getElementById("totalAmount").innerHTML = "";
+
+              // Show success message
+              showSuccess(data.message || "Sale recorded successfully");
+            } else {
+              showError(data.error || "Error recording sale");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            showError("Error recording sale");
+          });
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showError("Error checking stock availability");
+      });
+  });
+
+  // Add event listeners
+  document.getElementById("medicine").addEventListener("change", checkStock);
+  document.getElementById("shop").addEventListener("change", checkStock);
+  document.getElementById("quantity").addEventListener("input", calculateTotal);
+  document
+    .getElementById("selling_price")
+    .addEventListener("input", calculateTotal);
+
+  // Handle "View Sales List" button click
+  document
+    .getElementById("viewSalesListBtn")
+    .addEventListener("click", showSalesList);
+</script>
 
 <style>
-/* Classic Theme Colors */
-:root {
+  /* Classic Theme Colors */
+  :root {
     --primary: #2c3e50; /* Dark Blue */
     --secondary: #00bcd4; /* Cyan */
     --background: #d2e1f6; /* Light Gray */
@@ -190,59 +429,111 @@
     --success: #28a745; /* Green */
     --warning: #ffc107; /* Yellow */
     --danger: #dc3545; /* Red */
-}
+  }
 
-/* Button Styling */
-.btn-classic {
+  /* Button Styling */
+  .btn-classic {
     background-color: var(--primary);
     color: white;
     border: none;
     padding: 10px 20px;
-    border-radius: 8px;
-    transition: background-color 0.3s ease;
-}
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
 
-.btn-classic:hover {
+  .btn-classic:hover {
     background-color: var(--secondary);
     color: white;
-}
+  }
 
-/* Modal Styling */
-#salesListModal .modal-content {
-    border-radius: 15px;
-    border: 2px solid rgba(0, 188, 212, 0.3);
-}
+  /* Form Styling */
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 188, 212, 0.25);
+  }
 
-#salesListModal .modal-header {
-    border-radius: 13px 13px 0 0;
-}
+  /* Badge Styling */
+  .badge {
+    padding: 0.5em 0.8em;
+    font-weight: 500;
+  }
 
-/* Badge Styling */
-.badge {
-    padding: 8px 12px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    font-size: 0.8em;
-    color: rgb(51, 129, 224);
-}
+  .badge.cash {
+    background-color: var(--success);
+  }
 
-.badge-cash { background: var(--success); color: white; }
-.badge-upi { background: var(--primary); color: white; }
-.badge-card { background: var(--secondary); color: white; }
+  .badge.upi {
+    background-color: var(--primary);
+  }
 
-/* Table Styling */
-.table {
-    border-radius: 12px;
-    overflow: hidden;
-}
+  .badge.card {
+    background-color: var(--secondary);
+  }
 
-.table th {
-    background: var(--primary);
+  /* Alert Styling */
+  .alert {
+    border-radius: 5px;
+    margin-bottom: 20px;
+  }
+
+  /* Table Styling */
+  .table {
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .table thead th {
+    background-color: var(--primary);
     color: white;
-}
+    border: none;
+  }
 
-.table-hover tbody tr:hover {
+  .table tbody tr:hover {
     background-color: rgba(0, 188, 212, 0.1);
-}
+  }
+
+  /* Modal Styling */
+  .modal-content {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-header {
+    border-radius: 10px 10px 0 0;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding: 10px;
+    }
+
+    .btn-classic {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  }
+
+  /* Input Group Styling */
+  .input-group-text {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+  }
+
+  .input-group .form-control {
+    border-left: none;
+  }
+
+  .input-group .form-control:focus {
+    border-color: var(--secondary);
+    box-shadow: none;
+  }
+
+  .input-group:focus-within .input-group-text {
+    background-color: var(--secondary);
+  }
 </style>
 {% endblock %}
